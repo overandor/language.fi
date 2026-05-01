@@ -124,6 +124,44 @@ def get_space_price():
     cache['space_price'] = {'data': space_data, 'timestamp': time.time()}
     return jsonify(space_data)
 
+@app.route('/api/calculate-sentence-price', methods=['POST'])
+def calculate_sentence_price():
+    """Calculate minting price for a sentence"""
+    data = request.get_json()
+    sentence = data.get('sentence', '').upper()
+    
+    if not sentence:
+        return jsonify({'error': 'Sentence required'}), 400
+    
+    # Calculate price based on character costs
+    price_data = calculate_sentence_price_data(sentence)
+    return jsonify(price_data)
+
+@app.route('/api/transfer-sentence', methods=['POST'])
+def transfer_sentence():
+    """Transfer sentence with stillness reset"""
+    data = request.get_json()
+    sentence_hash = data.get('sentence_hash')
+    transfer_type = data.get('transfer_type', 'hard')  # 'hard' or 'vaulted'
+    
+    if not sentence_hash:
+        return jsonify({'error': 'Sentence hash required'}), 400
+    
+    # Generate transfer result
+    transfer_data = generate_transfer_result(sentence_hash, transfer_type)
+    return jsonify(transfer_data)
+
+@app.route('/api/sentence-leaderboard')
+def get_sentence_leaderboard():
+    """Get ranked list of staked sentences"""
+    if 'leaderboard' in cache and time.time() - cache['leaderboard']['timestamp'] < CACHE_DURATION:
+        return jsonify(cache['leaderboard']['data'])
+    
+    # Generate leaderboard data
+    leaderboard = generate_sentence_leaderboard()
+    cache['leaderboard'] = {'data': leaderboard, 'timestamp': time.time()}
+    return jsonify(leaderboard)
+
 def generate_letter_data():
     """Generate live letter price data with random sampling"""
     alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
@@ -416,6 +454,108 @@ def calculate_rarity_bonus(unique_chars, total_length):
         return 1.05
     else:
         return 1.00
+
+def calculate_sentence_price_data(sentence):
+    """Calculate minting price for a sentence"""
+    # Base character prices
+    base_prices = {
+        'E': 0.142, 'T': 0.185, 'A': 0.142, 'O': 0.085, 'N': 0.072,
+        'I': 0.095, 'R': 0.068, 'S': 0.105, 'H': 0.062, 'L': 0.058,
+        'D': 0.062, 'C': 0.118, 'U': 0.045, 'M': 0.075, 'W': 0.058,
+        'F': 0.052, 'G': 0.048, 'Y': 0.072, 'P': 0.065, 'B': 0.091,
+        'V': 0.042, 'K': 0.045, 'J': 0.038, 'X': 0.035, 'Q': 0.032, 'Z': 0.028,
+        'SPACE': 0.012
+    }
+    
+    total_price = 0
+    char_breakdown = {}
+    
+    for char in sentence:
+        char_key = 'SPACE' if char == ' ' else char.upper()
+        char_price = base_prices.get(char_key, 0.05)
+        total_price += char_price
+        
+        if char_key not in char_breakdown:
+            char_breakdown[char_key] = {'count': 0, 'price': char_price}
+        char_breakdown[char_key]['count'] += 1
+    
+    # Add minting fee
+    minting_fee = total_price * 0.05
+    final_price = total_price + minting_fee
+    
+    return {
+        'sentence': sentence,
+        'base_price': round(total_price, 2),
+        'minting_fee': round(minting_fee, 2),
+        'final_price': round(final_price, 2),
+        'character_breakdown': char_breakdown
+    }
+
+def generate_transfer_result(sentence_hash, transfer_type):
+    """Generate transfer result with stillness handling"""
+    # Simulate current staking state
+    current_days_staked = random.randint(30, 200)
+    current_multiplier = calculate_stillness_multiplier(current_days_staked)
+    
+    if transfer_type == 'hard':
+        # Hard transfer: stillness resets
+        new_multiplier = 1.00
+        stillness_preserved = 0
+    else:
+        # Vaulted transfer: partial stillness preserved
+        new_multiplier = current_multiplier * 0.5  # Preserve 50%
+        stillness_preserved = 50
+    
+    return {
+        'sentence_hash': sentence_hash,
+        'transfer_type': transfer_type,
+        'previous_stillness_days': current_days_staked,
+        'previous_multiplier': current_multiplier,
+        'new_stillness_days': 0 if transfer_type == 'hard' else current_days_staked,
+        'new_multiplier': round(new_multiplier, 2),
+        'stillness_preserved': f'{stillness_preserved}%',
+        'transfer_complete': True
+    }
+
+def generate_sentence_leaderboard():
+    """Generate ranked list of staked sentences"""
+    sample_sentences = [
+        'BUILD ON BASE',
+        'LANGUAGE IS LIQUIDITY',
+        'DEPLOY TO PROD',
+        'SHIP FAST OFTEN',
+        'CODE SHIP REPEAT',
+        'STILLNESS MINING',
+        'DIAMOND HANDS',
+        'HODL THE BAG',
+        'SPACE THE FINAL',
+        'FRONTIER BASE'
+    ]
+    
+    leaderboard = []
+    for i, sentence in enumerate(sample_sentences):
+        staking_data = generate_sentence_stake(sentence)
+        leaderboard.append({
+            'rank': i + 1,
+            'sentence': sentence,
+            'sentence_hash': staking_data['sentence_hash'],
+            'weekly_score': staking_data['final_score'],
+            'stillness_age': staking_data['days_staked'],
+            'stillness_multiplier': staking_data['stillness_multiplier'],
+            'space_exposure': staking_data['space_exposure'],
+            'top_character': staking_data['top_character'],
+            'weakest_character': staking_data['weakest_character'],
+            'reward_eligible': staking_data['spam_score'] > 70
+        })
+    
+    # Sort by score
+    leaderboard.sort(key=lambda x: x['weekly_score'], reverse=True)
+    
+    # Update ranks
+    for i, entry in enumerate(leaderboard):
+        entry['rank'] = i + 1
+    
+    return leaderboard
 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 3000))
