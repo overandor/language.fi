@@ -1,10 +1,70 @@
 # Language.fi Letter Explorer
 
-The Language.fi Letter Explorer is a live market dashboard for the alphabet, showing each letter's price, usage, source breakdown, token popularity, weekly trend markets, and settlement proofs across major blockchain ecosystems.
+The Language.fi Letter Explorer is a live market dashboard for the alphabet, showing each letter's price, usage, source breakdown, token popularity, weekly trend markets, and settlement proofs from the Language.fi Letter Usage Oracle.
 
 ## What This Is
 
-A Bloomberg terminal for the alphabet, where every letter becomes a live market. Letters are tracked, priced, traded, and settled across the protocol and external ecosystems like Solana, Ethereum, Base, Bitcoin Ordinals, Gate.io token listings, and sampled language sources.
+A Bloomberg terminal for the alphabet, where every letter becomes a live market. Letters are tracked, priced, traded, and settled using the Language.fi Oracle, which measures live letter and number usage across Solana names, NFT collections, domains, registry entries, and Gate.io token listings.
+
+## Letter Usage Oracle
+
+### Oracle Sources (Clean Source Set)
+- Solana token names
+- Solana NFT collection names
+- Solana domain names
+- Language.fi registry entries
+- Gate.io token listings
+
+### What the Oracle Measures
+For every supported character (A-Z, 0-9, SPACE, and allowed symbols), the oracle publishes:
+- Unique items containing the character
+- Total character occurrences
+- Week-over-week change
+- Source-by-source contribution
+- Protocol rank
+- Volatility
+- Oracle confidence
+
+### Source Weighting
+To reduce manipulation risk from one noisy source, the oracle applies fixed source weights:
+- Solana token names: 25%
+- Solana NFT collections: 20%
+- Solana domains: 15%
+- Language.fi registry entries: 25%
+- Gate.io token listings: 15%
+
+Weighted Letter Usage formula:
+
+```text
+Weighted Letter Usage =
+  (Solana Token Names × 0.25)
++ (Solana NFT Collections × 0.20)
++ (Solana Domains × 0.15)
++ (Language.fi Registry × 0.25)
++ (Gate.io Listings × 0.15)
+```
+
+### Oracle Update Cycle
+Every few minutes the oracle:
+1. Pulls latest available data from approved APIs/indexers.
+2. Takes randomized samples from each source.
+3. Normalizes names to uppercase.
+4. Counts A-Z, 0-9, SPACE, and allowed symbols.
+5. Compares current window to previous window.
+6. Updates letter prices and usage stats.
+7. Publishes oracle snapshot to the explorer.
+
+### Settlement Proof Requirements
+For real-money settlement, every oracle publication includes:
+- Sample size
+- Source URLs or source IDs
+- Timestamp
+- Normalization rules
+- Duplicate removal rules
+- Final count
+- Previous count
+- Change percentage
+- Oracle signature
 
 ## Why It Matters
 
@@ -49,15 +109,12 @@ Full market page answering:
 - Can users take a position?
 
 ### Protocol Breakdown
-Usage by ecosystem:
-- Solana
-- Ethereum
-- Base
-- Bitcoin Ordinals
-- Gate.io Tokens
-- Language.fi Registry
-- NYT Sample
-- Hash Baseline
+Usage by oracle source:
+- Solana Token Names
+- Solana NFT Collections
+- Solana Domains
+- Language.fi Registry Entries
+- Gate.io Token Listings
 
 ### Weekly Letter Market
 Derivatives-style long/short positions:
