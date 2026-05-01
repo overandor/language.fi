@@ -4,7 +4,7 @@ Language.fi Backend Server
 Provides live data for letter prices, usage statistics, and protocol breakdown
 """
 
-from flask import Flask, jsonify, send_from_directory
+from flask import Flask, jsonify, send_from_directory, request
 from flask_cors import CORS
 import requests
 import random
@@ -89,6 +89,41 @@ def get_settlements():
     cache['settlements'] = {'data': settlements, 'timestamp': time.time()}
     return jsonify(settlements)
 
+@app.route('/api/stake-sentence', methods=['POST'])
+def stake_sentence():
+    """Stake a sentence for stillness mining"""
+    data = request.get_json()
+    sentence = data.get('sentence', '').upper()
+    
+    if not sentence:
+        return jsonify({'error': 'Sentence required'}), 400
+    
+    # Generate sentence staking data
+    staking_data = generate_sentence_stake(sentence)
+    return jsonify(staking_data)
+
+@app.route('/api/sentence/<sentence_hash>')
+def get_sentence_stake(sentence_hash):
+    """Get staking data for a specific sentence"""
+    if f'sentence_{sentence_hash}' in cache and time.time() - cache[f'sentence_{sentence_hash}']['timestamp'] < CACHE_DURATION:
+        return jsonify(cache[f'sentence_{sentence_hash}']['data'])
+    
+    # Generate sentence staking data
+    staking_data = generate_sentence_stake(sentence_hash)
+    cache[f'sentence_{sentence_hash}'] = {'data': staking_data, 'timestamp': time.time()}
+    return jsonify(staking_data)
+
+@app.route('/api/space-price')
+def get_space_price():
+    """Get SPACE character price and stats"""
+    if 'space_price' in cache and time.time() - cache['space_price']['timestamp'] < CACHE_DURATION:
+        return jsonify(cache['space_price']['data'])
+    
+    # Generate SPACE character data
+    space_data = generate_space_data()
+    cache['space_price'] = {'data': space_data, 'timestamp': time.time()}
+    return jsonify(space_data)
+
 def generate_letter_data():
     """Generate live letter price data with random sampling"""
     alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
@@ -99,7 +134,8 @@ def generate_letter_data():
         'I': 0.095, 'R': 0.068, 'S': 0.105, 'H': 0.062, 'L': 0.058,
         'D': 0.062, 'C': 0.118, 'U': 0.045, 'M': 0.075, 'W': 0.058,
         'F': 0.052, 'G': 0.048, 'Y': 0.072, 'P': 0.065, 'B': 0.091,
-        'V': 0.042, 'K': 0.045, 'J': 0.038, 'X': 0.035, 'Q': 0.032, 'Z': 0.028
+        'V': 0.042, 'K': 0.045, 'J': 0.038, 'X': 0.035, 'Q': 0.032, 'Z': 0.028,
+        'SPACE': 0.012
     }
     
     for i, letter in enumerate(alphabet):
@@ -126,6 +162,25 @@ def generate_letter_data():
             'trend': '↑' if change > 0 else '↓',
             'volatility': volatility
         })
+    
+    # Add SPACE character
+    space_price = base_prices['SPACE']
+    space_change = random.uniform(-5, 20)
+    space_usage = random.randint(800000, 2500000)
+    space_long = random.randint(50, 75)
+    
+    letters.append({
+        'letter': 'SPACE',
+        'price': round(space_price * (1 + space_change / 100), 3),
+        'change_24h': round(space_change, 1),
+        'weekly_usage': format_number(space_usage),
+        'rank': '#27',
+        'long_pct': f'{space_long}%',
+        'short_pct': f'{100 - space_long}%',
+        'top_protocol': 'Solana',
+        'trend': '↑' if space_change > 0 else '↓',
+        'volatility': 'Medium'
+    })
     
     return letters
 
@@ -247,6 +302,120 @@ def format_number(num):
     elif num >= 1000:
         return f'{num/1000:.0f}K'
     return str(num)
+
+def generate_space_data():
+    """Generate SPACE character data"""
+    return {
+        'character': 'SPACE',
+        'price': round(random.uniform(0.008, 0.018), 3),
+        'change_24h': round(random.uniform(-5, 20), 1),
+        'weekly_usage': format_number(random.randint(800000, 2500000)),
+        'rank': '#4',
+        'description': 'Linguistic separator token'
+    }
+
+def generate_sentence_stake(sentence):
+    """Generate sentence staking data with stillness bonus"""
+    # Count characters including spaces
+    char_counts = {}
+    for char in sentence:
+        if char == ' ':
+            char = 'SPACE'
+        char_counts[char] = char_counts.get(char, 0) + 1
+    
+    # Generate character performance data
+    char_performance = {}
+    total_score = 0
+    for char, count in char_counts.items():
+        perf = random.uniform(-5, 15)
+        char_performance[char] = {
+            'count': count,
+            'performance': round(perf, 1),
+            'weight': round(count / len(sentence) * 100, 1)
+        }
+        total_score += perf * count
+    
+    # Calculate raw score
+    raw_score = round(total_score / len(sentence), 2)
+    
+    # Generate stillness bonus (random days staked)
+    days_staked = random.randint(0, 400)
+    stillness_multiplier = calculate_stillness_multiplier(days_staked)
+    
+    # Calculate final score
+    final_score = round(raw_score * stillness_multiplier, 3)
+    
+    # Calculate anti-spam score
+    spam_score = calculate_spam_score(sentence)
+    
+    # Calculate rarity bonus
+    unique_chars = len(char_counts)
+    rarity_bonus = calculate_rarity_bonus(unique_chars, len(sentence))
+    
+    return {
+        'sentence': sentence,
+        'sentence_hash': f'st_{random.randint(100000, 999999)}',
+        'character_counts': char_counts,
+        'character_performance': char_performance,
+        'raw_score': raw_score,
+        'days_staked': days_staked,
+        'stillness_multiplier': stillness_multiplier,
+        'final_score': final_score,
+        'spam_score': spam_score,
+        'rarity_bonus': rarity_bonus,
+        'space_exposure': round(char_counts.get('SPACE', 0) / len(sentence) * 100, 1),
+        'top_character': max(char_performance.items(), key=lambda x: x[1]['performance'])[0],
+        'weakest_character': min(char_performance.items(), key=lambda x: x[1]['performance'])[0]
+    }
+
+def calculate_stillness_multiplier(days_staked):
+    """Calculate stillness multiplier based on days staked"""
+    if days_staked < 7:
+        return 1.00
+    elif days_staked < 30:
+        return 1.10
+    elif days_staked < 90:
+        return 1.25
+    elif days_staked < 180:
+        return 1.50
+    elif days_staked < 365:
+        return 2.00
+    else:
+        return 3.00
+
+def calculate_spam_score(sentence):
+    """Calculate anti-spam score (lower is better)"""
+    score = 100
+    
+    # Repeated character penalty
+    char_counts = {}
+    for char in sentence:
+        char_counts[char] = char_counts.get(char, 0) + 1
+    
+    for char, count in char_counts.items():
+        if count > len(sentence) * 0.3:  # If any char is >30% of sentence
+            score -= 30
+    
+    # Low diversity penalty
+    if len(char_counts) < 3:
+        score -= 20
+    
+    # Length penalty for very short sentences
+    if len(sentence) < 5:
+        score -= 10
+    
+    return max(0, score)
+
+def calculate_rarity_bonus(unique_chars, total_length):
+    """Calculate rarity bonus based on character diversity"""
+    if unique_chars == total_length:
+        return 1.20  # All unique characters
+    elif unique_chars / total_length > 0.8:
+        return 1.10
+    elif unique_chars / total_length > 0.5:
+        return 1.05
+    else:
+        return 1.00
 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 3000))

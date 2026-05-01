@@ -66,6 +66,16 @@ Derivatives-style long/short positions:
 - Settlement Rule: Wins if usage closes above/below last week
 - Settlement: Sunday 23:59 UTC
 
+### Sentence Staking
+Stake whole sentences as character baskets:
+- Sentence as letter index fund
+- SPACE character as linguistic separator asset
+- Stillness bonus: longer-held sentences earn higher multipliers
+- Weekly performance based on character popularity
+- Transfer penalties: moving resets stillness bonus
+- Anti-spam rules: repetition penalties, diversity requirements
+- Vaulted transfer option: preserve partial stillness on transfer
+
 ### Price Explanation Panel
 Transparent pricing breakdown:
 - Base Letter Price
@@ -130,6 +140,7 @@ vercel --prod
 - Data API subscriptions
 - Enterprise reports
 - Mobile app
+- Sentence staking with stillness mining
 
 ## Metrics We Track
 
