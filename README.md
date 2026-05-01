@@ -1,6 +1,18 @@
-# Language.fi Letter Explorer
+# LanguageFi: Oracle-Priced Character Primitives for Sentence-Based Digital Assets
 
-The Language.fi Letter Explorer is a live market dashboard for the alphabet, showing each letter's price, usage, source breakdown, token popularity, weekly trend markets, and settlement proofs from the Language.fi Letter Usage Oracle.
+Language.fi is a character oracle and sentence staking protocol. It prices letters, numbers, spaces, and symbols using live usage data from token names, NFT collections, domains, registry entries, and exchange listings. Users mint or stake sentences whose values are calculated from the live prices of their underlying characters.
+
+## Core Invention
+
+Characters become priced API primitives, and sentences become staked baskets of those primitives.
+
+**Meaning:**
+- A, B, C, 7, SPACE, etc. each have live oracle prices
+- A sentence is valued by summing its characters
+- A staked sentence earns score based on its character basket, time held, diversity, and anti-spam rules
+
+**Value Logic:**
+More used character → higher demand score → higher primitive price → higher sentence value → stronger staking score or minting cost
 
 ## What This Is
 
@@ -68,11 +80,13 @@ For real-money settlement, every oracle publication includes:
 
 ## Why It Matters
 
-- **Novel Asset Class**: Letters as tradable assets with real usage data
-- **Cross-Protocol Visibility**: Track letter usage across multiple blockchains
-- **Derivatives Markets**: Weekly long/short positions on letter usage trends
-- **Transparent Pricing**: Clear breakdown of how letter prices are calculated
-- **Settlement Proofs**: On-chain verifiable outcomes for letter markets
+- **Character-Level Financial Primitives**: Letters and numbers become priced units, not just text
+- **API-Served Alphabet Economy**: Every character has a price, rank, volatility, source breakdown, and oracle confidence
+- **Sentence-as-Basket Staking**: A sentence behaves like an index basket made of character assets
+- **Language-Derived Pricing**: Prices come from real usage of language in blockchain naming systems
+- **Popularity-Based Settlement Markets**: Users could go long/short on letters like B, A, 7, or SPACE based on weekly usage changes
+- **Prepaid Sentence Minting**: Users buy capacity, then fill it with text priced by oracle characters
+- **Protocol-Derived Base Value**: The sentence has a base value because its characters have measured oracle value and minting cost
 
 ## How It Makes Money
 
@@ -132,6 +146,7 @@ Stake whole sentences as character baskets:
 - Transfer penalties: moving resets stillness bonus
 - Anti-spam rules: repetition penalties, diversity requirements
 - Vaulted transfer option: preserve partial stillness on transfer
+- Staking-weighted sentence value: calculated from oracle-derived character values
 
 ### Price Explanation Panel
 Transparent pricing breakdown:
@@ -206,6 +221,29 @@ vercel --prod
 - **Position Volume**: Weekly long/short volume
 - **Trading Volume**: Letter market transaction volume
 - **Conversion Rate**: Explorer → Trader
+
+## R&D Documentation
+
+**Formal Title:** Dynamic Character Oracle for Linguistic Asset Valuation and Sentence Staking
+
+**Core R&D Concept:** A system for converting character frequency across blockchain naming datasets into live primitive prices, then using those prices to value, mint, stake, and settle sentence-based digital assets.
+
+**Value Terminology (Legal/Investor Safe):**
+- Protocol-derived base value
+- Oracle-derived character value
+- Measurable linguistic demand value
+- Staking-weighted sentence value
+
+**Avoid:** Do not use "intrinsic value" in legal or investor language.
+
+**Disruptive Innovation Inventory:**
+1. Character-level financial primitives
+2. API-served alphabet economy
+3. Sentence-as-basket staking
+4. Language-derived pricing
+5. Popularity-based settlement markets
+6. Prepaid sentence minting
+7. Protocol-derived base value
 
 ## License
 
