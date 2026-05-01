@@ -19,6 +19,7 @@ CORS(app)
 GATE_API_KEY = os.getenv('GATE_API_KEY', '5f35c83ea82aafa977f46a7b1f75c873')
 GATE_API_SECRET = os.getenv('GATE_API_SECRET', '9467d896f5bf2980d0c66bb948608aca3a619a00eb7dbbdfe9f2ef94b594fb3')
 COINMARKETCAP_API_KEY = os.getenv('COINMARKETCAP_API_KEY', '')
+COINGECKO_API_KEY = os.getenv('COINGECKO_API_KEY', 'CG-DD8rr7U4hQsjAxokXt7ERtaG')
 
 # Cache for data
 cache = {}
@@ -28,6 +29,7 @@ CACHE_DURATION = 300  # 5 minutes
 live_data_cache = {
     'coinmarketcap_tokens': None,
     'gateio_tokens': None,
+    'coingecko_tokens': None,
     'last_updated': None
 }
 
@@ -81,6 +83,37 @@ def fetch_gateio_tokens():
         print(f"Error fetching Gate.io data: {e}")
         return None
 
+def fetch_coingecko_tokens():
+    """Fetch token data from CoinGecko API"""
+    try:
+        # Fetch top cryptocurrencies
+        url = 'https://api.coingecko.com/api/v3/coins/markets'
+        headers = {
+            'Accept': 'application/json'
+        }
+        if COINGECKO_API_KEY:
+            headers['x-cg-demo-api-key'] = COINGECKO_API_KEY
+        
+        params = {
+            'vs_currency': 'usd',
+            'order': 'market_cap_desc',
+            'per_page': '250',
+            'page': '1',
+            'sparkline': 'false'
+        }
+        
+        response = requests.get(url, headers=headers, params=params, timeout=30)
+        response.raise_for_status()
+        
+        data = response.json()
+        tokens = data if isinstance(data, list) else []
+        
+        print(f"Fetched {len(tokens)} tokens from CoinGecko")
+        return tokens
+    except Exception as e:
+        print(f"Error fetching CoinGecko data: {e}")
+        return None
+
 def count_characters_in_tokens(tokens, source_name):
     """Count character occurrences in token names"""
     char_counts = {}
@@ -92,9 +125,12 @@ def count_characters_in_tokens(tokens, source_name):
         if source_name == 'coinmarketcap':
             name = token.get('name', '').upper()
             symbol = token.get('symbol', '').upper()
-        else:  # gateio
+        elif source_name == 'gateio':
             name = token.get('id', '').upper() if isinstance(token, dict) else ''
             symbol = token.get('base', '').upper() if isinstance(token, dict) else ''
+        elif source_name == 'coingecko':
+            name = token.get('name', '').upper() if isinstance(token, dict) else ''
+            symbol = token.get('symbol', '').upper() if isinstance(token, dict) else ''
         
         # Count characters in name
         for char in name:
@@ -122,6 +158,11 @@ def update_live_oracle_data():
     if gate_tokens:
         live_data_cache['gateio_tokens'] = gate_tokens
     
+    # Fetch CoinGecko tokens
+    cg_tokens = fetch_coingecko_tokens()
+    if cg_tokens:
+        live_data_cache['coingecko_tokens'] = cg_tokens
+    
     live_data_cache['last_updated'] = datetime.utcnow().isoformat()
     
     print(f"Live oracle data updated at {live_data_cache['last_updated']}")
@@ -131,6 +172,7 @@ def get_live_character_counts():
     char_counts = {
         'coinmarketcap': {},
         'gateio': {},
+        'coingecko': {},
         'total': {}
     }
     
@@ -144,8 +186,13 @@ def get_live_character_counts():
         gate_counts = count_characters_in_tokens(live_data_cache['gateio_tokens'], 'gateio')
         char_counts['gateio'] = gate_counts
     
+    # Count from CoinGecko
+    if live_data_cache.get('coingecko_tokens'):
+        cg_counts = count_characters_in_tokens(live_data_cache['coingecko_tokens'], 'coingecko')
+        char_counts['coingecko'] = cg_counts
+    
     # Combine counts
-    for source in ['coinmarketcap', 'gateio']:
+    for source in ['coinmarketcap', 'gateio', 'coingecko']:
         for char, count in char_counts[source].items():
             char_counts['total'][char] = char_counts['total'].get(char, 0) + count
     
@@ -460,7 +507,8 @@ def tokenize_oracle_stats():
             'total_characters': sum(char_counts['total'].values()),
             'data_sources': {
                 'coinmarketcap': len(live_data_cache.get('coinmarketcap_tokens', [])),
-                'gateio': len(live_data_cache.get('gateio_tokens', []))
+                'gateio': len(live_data_cache.get('gateio_tokens', [])),
+                'coingecko': len(live_data_cache.get('coingecko_tokens', []))
             },
             'token_metadata': {
                 'name': f'Oracle Snapshot {token_id}',
